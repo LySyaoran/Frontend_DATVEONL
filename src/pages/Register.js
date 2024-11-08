@@ -69,7 +69,7 @@ const Register = () => {
     } catch (error) {
       // Error; verification code is incorrect
       console.error("Error during signInWithCredential", error);
-      setError('Invalid verification code. Please try again.');
+      setError('Invalid verification code:' + error.message);
     }
   };
 
