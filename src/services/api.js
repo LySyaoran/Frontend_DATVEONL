@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 const API_URL = 'http://localhost:5000/api/movies'; // Đường dẫn đến API movies
+const API_URL_ACCOUNT = 'http://localhost:5000/api/accounts'; // Đường dẫn đến API movies
 
 // Hàm lấy tất cả các phim
 export const getAllMovies = async () => {
@@ -100,7 +101,7 @@ export const login = async (email, password) => {
 
 export const register = async (account) => {
   try {
-    const response = await axios.post(`${API_URL}/register`, account);
+    const response = await axios.post(`${API_URL_ACCOUNT}/register`, account);
     return response.data;
   } catch (error) {
     console.error('Error registering:', error);
