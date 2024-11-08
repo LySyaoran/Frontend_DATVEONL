@@ -2,13 +2,13 @@ import { initializeApp } from "firebase/app";
 import { getAuth, RecaptchaVerifier , signInWithPhoneNumber } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBONtQosDUT30uK5Csne-TJCAExDpJge1U",
-  authDomain: "smsverify-8bbff.firebaseapp.com",
-  projectId: "smsverify-8bbff",
-  storageBucket: "smsverify-8bbff.firebasestorage.app",
-  messagingSenderId: "410134379702",
-  appId: "1:410134379702:web:cbc3e2ed1e9f53d213ba17",
-  measurementId: "G-FCV95ZNCPG"
+  apiKey: "AIzaSyDEcKadngPmSn-LEpp7U0Z7vnbtyuiAWjI",
+  authDomain: "smsverify-211d0.firebaseapp.com",
+  projectId: "smsverify-211d0",
+  storageBucket: "smsverify-211d0.firebasestorage.app",
+  messagingSenderId: "737569023571",
+  appId: "1:737569023571:web:5c0c13d58cf631368988a6",
+  measurementId: "G-BCKRE94LT0"
 };
 
 // Initialize Firebase
