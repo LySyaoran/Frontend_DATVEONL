@@ -11,6 +11,7 @@ const MovieDetail = () => {
   const [credits, setCredits] = useState({ director: '', cast: '' });
   const [trailerVisible, setTrailerVisible] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false); // State để quản lý modal
+  const [selectedMovie, setSelectedMovie] = useState('');
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -32,7 +33,8 @@ const MovieDetail = () => {
     setTrailerVisible(!trailerVisible);
   };
 
-  const handleBuyTicketClick = () => {
+  const handleBuyTicketClick = (movieName) => {
+    setSelectedMovie(movieName);
     setIsModalOpen(true);
   };
 
@@ -62,7 +64,7 @@ const MovieDetail = () => {
           <p><strong>Thời lượng:</strong> {movie.THOILUONG} phút</p>
           <p><strong>Khởi chiếu:</strong> {new Date(movie.NGAYKHOICHIEU).toLocaleDateString()}</p>
           <div className="flex space-x-2 mt-4">
-            <button className="btn-red" onClick={handleBuyTicketClick}>Đặt vé</button>
+            <button className="btn-red" onClick={() => handleBuyTicketClick(movie.TENPHIM)}>Đặt vé</button>
             <button className="btn-outline-dark" onClick={toggleTrailer}>
               {trailerVisible ? 'Hide Trailer' : 'Show Trailer'}
             </button>
@@ -80,7 +82,7 @@ const MovieDetail = () => {
           </div>
         </div>
       </div>
-      <BookingModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} /> {/* Sử dụng BookingModal */}
+      <BookingModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} movieTitle={selectedMovie} /> {/* Sử dụng BookingModal */}
     </div>
   );
 };

@@ -1,58 +1,120 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getSchedule, getMaPhongChieu, getNameRoom, getCountChair } from '../services/api';
 
-const BookingModal = ({ isOpen, onClose }) => {
-    const navigate = useNavigate();
-  const [selectedDate, setSelectedDate] = useState(null);
-  const [selectedCity, setSelectedCity] = useState('Hồ Chí Minh');
+const BookingModal = ({ isOpen, onClose, movieTitle }) => {
+  const navigate = useNavigate();
+
+  const [schedule, setSchedule] = useState([]);
+  const [dates, setDates] = useState([]);
+  const [selectedDate, setSelectedDate] = useState('');
+  const [cities, setCities] = useState([]);
+  const [selectedCity, setSelectedCity] = useState('');
+  const [cinemas, setCinemas] = useState([]);
   const [selectedCinema, setSelectedCinema] = useState('');
-  const [selectedTime, setSelectedTime] = useState('');
   const [times, setTimes] = useState([]);
-
-  const dates = ['30 Wed', '31 Thu', '01 Fri', '02 Sat', '03 Sun', '04 Mon', '05 Tue'];
-  const cities = ['Hồ Chí Minh', 'Hà Nội', 'Đà Nẵng', 'Cần Thơ', 'Đồng Nai'];
-  const cinemasByCity = {
-    'Hồ Chí Minh': ['CGV Hùng Vương Plaza', 'CGV Menas Mall (CGV CT Plaza)', 'CGV Crescent Mall', 'CGV Pandora City', 'CGV Aeon Tân Phú', 'CGV Thảo Điền Pearl'],
-    'Hà Nội': ['CGV Vincom Center Bà Triệu', 'CGV Hồ Gươm Plaza', 'CGV Aeon Long Biên', 'CGV Vincom Nguyễn Chí Thanh', 'CGV Indochina Plaza Hà Nội', 'CGV Rice City', 'CGV Hà Nội Centerpoint', 'CGV Tràng Tiền Plaza', 'CGV Trương Định Plaza'],
-    'Đà Nẵng': ['CGV Vĩnh Trung Plaza', 'CGV Vincom Đà Nẵng'],
-    'Cần Thơ': ['CGV Sense City Cần Thơ'],
-    'Đồng Nai': ['CGV Biên Hòa']
-  };
-  const timesByCinema = {
-    'CGV Hùng Vương Plaza': ['20:30 PM', '21:50 PM', '22:50 PM'],
-    'CGV Menas Mall (CGV CT Plaza)': ['20:30 PM', '21:50 PM', '22:50 PM'],
-    'CGV Crescent Mall': ['20:30 PM', '21:50 PM', '22:50 PM'],
-    'CGV Pandora City': ['20:30 PM', '21:50 PM', '22:50 PM'],
-    'CGV Aeon Tân Phú': ['20:30 PM', '21:50 PM', '22:50 PM'],
-    'CGV Thảo Điền Pearl': ['20:30 PM', '21:50 PM', '22:50 PM'],
-    'CGV Vincom Center Bà Triệu': ['20:30 PM', '21:50 PM', '22:50 PM'],
-    'CGV Hồ Gươm Plaza': ['20:30 PM', '21:50 PM', '22:50 PM'],
-    'CGV Aeon Long Biên': ['18:30 PM', '20:20 PM', '22:30 PM'],
-    'CGV Vincom Nguyễn Chí Thanh': ['20:30 PM', '21:50 PM', '22:50 PM'],
-    'CGV Indochina Plaza Hà Nội': ['20:30 PM', '21:50 PM', '22:50 PM'],
-    'CGV Rice City': ['20:30 PM', '21:50 PM', '22:50 PM'],
-    'CGV Hà Nội Centerpoint': ['20:30 PM', '21:50 PM', '22:50 PM'],
-    'CGV Tràng Tiền Plaza': ['20:30 PM', '21:50 PM', '22:50 PM'],
-    'CGV Trương Định Plaza': ['20:30 PM', '21:50 PM', '22:50 PM'],
-    'CGV Vĩnh Trung Plaza': ['20:30 PM', '21:50 PM', '22:50 PM'],
-    'CGV Vincom Đà Nẵng': ['20:30 PM', '21:50 PM', '22:50 PM'],
-    'CGV Sense City Cần Thơ': ['20:30 PM', '21:50 PM', '22:50 PM'],
-    'CGV Biên Hòa': ['20:30 PM', '21:50 PM', '22:50 PM']
-  };
+  const [selectedTime, setSelectedTime] = useState('');
+  const [poster, setPoster] = useState('');
 
   useEffect(() => {
-    if (selectedCinema) {
-      setTimes(timesByCinema[selectedCinema]);
-    }
-  }, [selectedCinema]);
+    const fetchSchedule = async () => {
+      try {
+        const data = await getSchedule(movieTitle);
+        setSchedule(data.showtimes);
+        setPoster(data.POSTER);
 
-  const handleSubmit = () => {
-    console.log('Date:', selectedDate);
-    console.log('City:', selectedCity);
-    console.log('Cinema:', selectedCinema);
-    console.log('Time:', selectedTime);
+        // Lấy danh sách ngày chiếu
+        const uniqueDates = [...new Set(data.showtimes.map(item => item.NGAYCHIEU))];
+        setDates(uniqueDates);
+
+      } catch (error) {
+        console.error('Error fetching schedule:', error);
+      }
+    };
+
+    if (isOpen) {
+      fetchSchedule();
+    }
+  }, [isOpen, movieTitle]);
+
+  useEffect(() => {
+    // Khi selectedDate thay đổi, cập nhật danh sách thành phố
+    const filteredData = schedule.filter(item => item.NGAYCHIEU === selectedDate);
+    const uniqueCities = [...new Set(filteredData.map(item => item.TINHTHANH))];
+    setCities(uniqueCities);
+    setSelectedCity('');
+    setSelectedCinema('');
+    setSelectedTime('');
+    setCinemas([]);
+    setTimes([]);
+  }, [selectedDate, schedule]);
+
+  useEffect(() => {
+    // Khi selectedCity thay đổi, cập nhật danh sách rạp
+    const filteredData = schedule.filter(item => item.NGAYCHIEU === selectedDate && item.TINHTHANH === selectedCity);
+    const rapLists = filteredData.flatMap(item => item.rapList);
+    const uniqueCinemas = [...new Set(rapLists.map(rap => rap.TENRAP))];
+    setCinemas(uniqueCinemas);
+    setSelectedCinema('');
+    setSelectedTime('');
+    setTimes([]);
+  }, [selectedCity, selectedDate, schedule]);
+
+  useEffect(() => {
+    // Khi selectedCinema thay đổi, cập nhật danh sách thời gian chiếu
+    const filteredData = schedule.filter(item => item.NGAYCHIEU === selectedDate && item.TINHTHANH === selectedCity);
+    const rapLists = filteredData.flatMap(item => item.rapList);
+    const selectedRap = rapLists.find(rap => rap.TENRAP === selectedCinema);
+    if (selectedRap) {
+      const timesList = selectedRap.suatChieu.map(suat => suat.GIOBATDAU);
+      setTimes(timesList);
+    } else {
+      setTimes([]);
+    }
+    setSelectedTime('');
+  }, [selectedCinema, selectedCity, selectedDate, schedule]);
+
+  const handleSubmit = async () => {
     onClose();
-    navigate('/choose-chart');
+
+    const maphongResult = await getMaPhongChieu(movieTitle, selectedDate, selectedCity, selectedCinema, selectedTime);
+    const maphong = maphongResult[0]?.MAPHONG || 'Không tìm thấy mã phòng';
+    const tenPhongResult = await getNameRoom(movieTitle, selectedDate, selectedCity, selectedCinema, selectedTime);
+    const tenPhong = tenPhongResult[0]?.TENPHONG || 'Không tìm thấy tên phòng';
+    try {
+      const soLuongGheResult = await getCountChair(maphong);
+      const soLuongGhe = soLuongGheResult[0]?.[''] || 'Không tìm thấy số lượng ghế';
+
+      if (maphong) {
+        const selectedShow = schedule.find(item => 
+          item.NGAYCHIEU === selectedDate && 
+          item.TINHTHANH === selectedCity &&
+          item.rapList.some(rap => rap.TENRAP === selectedCinema && rap.suatChieu.some(suat => suat.GIOBATDAU === selectedTime))
+        );
+        const selectedRap = selectedShow.rapList.find(rap => rap.TENRAP === selectedCinema);
+        const selectedSuat = selectedRap.suatChieu.find(suat => suat.GIOBATDAU === selectedTime);
+        const gioKetThuc = selectedSuat.GIOKETTHUC;
+
+        navigate('/choose-chart', { 
+          state: { 
+            movieTitle,
+            poster,
+            selectedCinema,
+            tenPhong,
+            maphong,
+            soLuongGhe,
+            selectedTime,
+            gioKetThuc,
+            selectedDate
+          } 
+        });
+      } else {
+        alert('Không tìm thấy mã phòng chiếu.');
+      }
+    } catch (error) {
+      console.error('Error getting maphong:', error);
+      alert('Error getting maphong:', error);
+    }
   };
 
   return (
@@ -73,57 +135,59 @@ const BookingModal = ({ isOpen, onClose }) => {
               </button>
             ))}
           </div>
-          <hr className="my-2 md:my-4" />
 
-          {/* Địa điểm */}
-          <div className="flex justify-start my-4 overflow-x-auto px-4 py-2">
-            {cities.map((city, index) => (
-              <button
-                key={index}
-                className={`mx-1 md:mx-2 px-3 py-2 md:px-4 md:py-2 rounded-lg text-center whitespace-nowrap ${selectedCity === city ? 'bg-black text-white' : 'bg-gray-200'}`}
-                onClick={() => setSelectedCity(city)}
-              >
-                {city}
-              </button>
-            ))}
-          </div>
-          <hr className="my-2 md:my-4" />
+          {/* Thành phố */}
+          {selectedDate && (
+            <div className="flex overflow-x-auto py-2 md:py-4">
+              {cities.map((city, index) => (
+                <button
+                  key={index}
+                  className={`mx-1 md:mx-2 px-2 py-1 md:px-3 md:py-2 border rounded-lg whitespace-nowrap ${selectedCity === city ? 'bg-black text-white' : 'bg-gray-200'}`}
+                  onClick={() => setSelectedCity(city)}
+                >
+                  {city}
+                </button>
+              ))}
+            </div>
+          )}
 
-          {/* Rạp */}
-          <div className="flex justify-start my-4 overflow-x-auto px-4 py-2">
-            {cinemasByCity[selectedCity].map((cinema, index) => (
-              <button
-                key={index}
-                className={`mx-1 md:mx-2 px-3 py-2 md:px-4 md:py-2 rounded-lg text-center whitespace-nowrap ${selectedCinema === cinema ? 'bg-black text-white' : 'bg-gray-200'}`}
-                onClick={() => setSelectedCinema(cinema)}
-              >
-                {cinema}
-              </button>
-            ))}
-          </div>
-          <hr className="my-2 md:my-4" />
+          {/* Danh sách rạp */}
+          {selectedCity && (
+            <div className="flex flex-wrap justify-center py-2 md:py-3">
+              {cinemas.map((cinema, index) => (
+                <button
+                  key={index}
+                  className={`m-1 md:m-2 px-2 py-1 md:px-3 md:py-2 border rounded-lg ${selectedCinema === cinema ? 'bg-black text-white' : 'bg-gray-200'}`}
+                  onClick={() => setSelectedCinema(cinema)}
+                >
+                  {cinema}
+                </button>
+              ))}
+            </div>
+          )}
 
-          {/* Giờ chiếu */}
-          <div className="flex justify-center mb-2 md:mb-4 overflow-x-auto py-2">
-            {times.map((time, index) => (
-              <button
-                key={index}
-                className={`mx-1 md:mx-2 px-3 py-2 md:px-4 md:py-2 rounded-lg ${selectedTime === time ? 'bg-black text-white' : 'bg-gray-200'}`}
-                onClick={() => setSelectedTime(time)}
-              >
-                {time}
-              </button>
-            ))}
-          </div>
+          {/* Thời gian chiếu */}
+          {selectedCinema && (
+            <div className="flex flex-wrap justify-center py-2 md:py-3">
+              {times.map((time, index) => (
+                <button
+                  key={index}
+                  className={`m-1 md:m-2 px-2 py-1 md:px-3 md:py-2 border rounded-lg ${selectedTime === time ? 'bg-black text-white' : 'bg-gray-200'}`}
+                  onClick={() => setSelectedTime(time)}
+                >
+                  {time.substring(11, 16)} {/* Hiển thị giờ và phút */}
+                </button>
+              ))}
+            </div>
+          )}
 
-          <div className="flex justify-center">
-            <button
-              className="bg-blue-500 text-white w-full md:w-auto px-4 py-2 rounded-lg"
-              onClick={handleSubmit}
-            >
-              Xác nhận
-            </button>
-          </div>
+          <button
+            disabled={!selectedDate || !selectedCity || !selectedCinema || !selectedTime}
+            onClick={handleSubmit}
+            className={`mt-4 px-4 py-2 rounded-md text-white ${!selectedDate || !selectedCity || !selectedCinema || !selectedTime ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-500'}`}
+          >
+            Tiếp theo
+          </button>
         </div>
       </div>
     )

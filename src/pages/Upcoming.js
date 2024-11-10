@@ -11,7 +11,7 @@ const Upcoming = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [movies, setMovies] = useState([]);
-  // const [searchTerm, setSearchTerm] = useState('');
+  const [selectedMovie, setSelectedMovie] = useState('');
 
   useEffect(() => {
     const fetchMovies = async () => {
@@ -194,7 +194,8 @@ const Upcoming = () => {
     }
   };
 
-  const handleBuyTicketClick = () => {
+  const handleBuyTicketClick = (movieName) => {
+    setSelectedMovie(movieName)
     setIsModalOpen(true);
   };
 
@@ -238,7 +239,7 @@ const Upcoming = () => {
               <img onClick={handleButtonClick} src={`${movie.POSTER}`} alt="Movie Poster" />
               <div className="card-content">
                 <p onClick={handleButtonClick} className="movie-name">{movie.TENPHIM}</p>
-                <button onClick={handleBuyTicketClick} className="buy-ticket-button">Mua vé</button>
+                <button onClick={() => handleBuyTicketClick(movie.TENPHIM)} className="buy-ticket-button">Mua vé</button>
               </div>
             </div>
           ))}
@@ -255,7 +256,7 @@ const Upcoming = () => {
           {trailer && <YouTube className="video_trailer" videoId={trailer} opts={{ height: '390', width: '640', playerVars: { autoplay: 1 } }} />}
         </div>
       </div>
-      <BookingModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <BookingModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} movieTitle={selectedMovie} />
     </div>
   );
 };

@@ -1,115 +1,267 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import '../assets/styles/chooseChart.css';
-import chairImage from '../assets/images/chair.png'; // Hình ảnh ghế thường
-import chairImageVip from '../assets/images/chairvip.png'; // Hình ảnh ghế VIP
-import chairImageCouple from '../assets/images/chaircouple.png'; // Hình ảnh ghế đôi
 import manhinhImage from '../assets/images/manhinh.png'; // Hình ảnh màn hình
-
-const seats = [
-    { id: 'A1', type: 'regular', status: 'available' }, { id: 'A2', type: 'regular', status: 'available' }, { id: 'A3', type: 'regular', status: 'available' }, { id: 'A4', type: 'regular', status: 'available' },{ id: 'A5', type: 'regular', status: 'available' }, { id: 'A6', type: 'regular', status: 'available' },{ id: 'A7', type: 'regular', status: 'available' },{ id: 'A8', type: 'regular', status: 'available' }, { id: 'A9', type: 'regular', status: 'available' }, { id: 'A10', type: 'regular', status: 'available' },{ id: 'A11', type: 'regular', status: 'available' },{ id: 'A12', type: 'regular', status: 'available' },
-    { id: 'A13', type: 'regular', status: 'available' },{ id: 'A14', type: 'regular', status: 'available' },{ id: 'A15', type: 'regular', status: 'available' },{ id: 'A16', type: 'regular', status: 'available' },{ id: 'A17', type: 'regular', status: 'available' },{ id: 'A18', type: 'regular', status: 'available' },{ id: 'A19', type: 'regular', status: 'available' },{ id: 'A20', type: 'regular', status: 'available' },
-    { id: 'B1', type: 'vip', status: 'available' }, { id: 'B2', type: 'vip', status: 'available' }, { id: 'B3', type: 'vip', status: 'available' },  { id: 'B4', type: 'vip', status: 'available' }, { id: 'B5', type: 'vip', status: 'available' }, { id: 'B6', type: 'vip', status: 'available' }, { id: 'B7', type: 'vip', status: 'available' }, { id: 'B8', type: 'vip', status: 'available' }, { id: 'B9', type: 'vip', status: 'available' }, { id: 'B10', type: 'vip', status: 'available' }, 
-    { id: 'B11', type: 'vip', status: 'available' }, { id: 'B12', type: 'vip', status: 'available' }, { id: 'B13', type: 'vip', status: 'available' }, { id: 'B14', type: 'vip', status: 'available' }, { id: 'B15', type: 'vip', status: 'available' }, { id: 'B16', type: 'vip', status: 'available' }, { id: 'B17', type: 'vip', status: 'available' }, { id: 'B18', type: 'vip', status: 'available' }, { id: 'B19', type: 'vip', status: 'available' }, { id: 'B20', type: 'vip', status: 'available' },
-    { id: 'C1', type: 'couple', status: 'available' }, { id: 'C2', type: 'couple', status: 'available' }, { id: 'C3', type: 'couple', status: 'available' }, { id: 'C4', type: 'couple', status: 'available' }, { id: 'C5', type: 'couple', status: 'available' }, { id: 'C6', type: 'couple', status: 'available' }, { id: 'C7', type: 'couple', status: 'available' }, { id: 'C8', type: 'couple', status: 'available' }, { id: 'C9', type: 'couple', status: 'available' }, { id: 'C10', type: 'couple', status: 'available' },
-    { id: 'C11', type: 'couple', status: 'available' }, { id: 'C12', type: 'couple', status: 'available' }, { id: 'C13', type: 'couple', status: 'available' }, { id: 'C14', type: 'couple', status: 'available' }, { id: 'C15', type: 'couple', status: 'available' }, { id: 'C16', type: 'couple', status: 'available' }, { id: 'C17', type: 'couple', status: 'available' }, { id: 'C18', type: 'couple', status: 'available' }, { id: 'C19', type: 'couple', status: 'available' }, { id: 'C20', type: 'couple', status: 'available' }
-];
+import { useLocation } from 'react-router-dom';
+import { getAllChairs, getService } from '../services/api'; // Import hàm API
 
 const ChooseChart = () => {
-    const [selectedSeats, setSelectedSeats] = useState([]);
+  const location = useLocation();
+  const { movieTitle, poster, selectedCinema, maphong, tenPhong, soLuongGhe, selectedTime, gioKetThuc, selectedDate } = location.state || {};
 
-    const handleSeatClick = (seatId) => {
-        setSelectedSeats(prevSelectedSeats =>
-            prevSelectedSeats.includes(seatId)
-                ? prevSelectedSeats.filter(id => id !== seatId) // Bỏ chọn ghế
-                : [...prevSelectedSeats, seatId] // Chọn ghế
-        );
-    };
+  const [seats, setSeats] = useState([]);
+  const [selectedSeats, setSelectedSeats] = useState([]);
+  const [showService, setShowService] = useState(false); // State để quản lý việc hiển thị phần dịch vụ
+  const [services, setServices] = useState([]); // State để lưu trữ danh sách dịch vụ
+  const [serviceQuantities, setServiceQuantities] = useState({}); // State để lưu trữ số lượng dịch vụ
 
-    // Hàm để lấy màu sắc filter dựa trên ghế
-    const getFilterColor = (seatId) => {
-        if (selectedSeats.includes(seatId)) {
-            return 'brightness(0.5) sepia(1) hue-rotate(180deg)'; // Màu sắc mặc định
-        }
-        return 'none';
-    };
-
-    // Hàm để lấy hình ảnh ghế dựa trên loại ghế
-    const getChairImage = (type) => {
-        switch (type) {
-            case 'regular':
-                return chairImage; // Ghế thường
-            case 'vip':
-                return chairImageVip; // Ghế VIP
-            case 'couple':
-                return chairImageCouple; // Ghế đôi
-            default:
-                return chairImage; // Mặc định
-        }
-    };
-
-    // Hàm để lấy giá ghế
-    const getSeatPrice = (type) => {
-        switch (type) {
-            case 'regular':
-                return 60000; // Giá ghế thường
-            case 'vip':
-                return 70000; // Giá ghế VIP
-            case 'couple':
-                return 100000; // Giá ghế đôi
-            default:
-                return 0; // Mặc định
-        }
-    };
-
-    // Tính tổng tiền
-    const totalPrice = selectedSeats.reduce((total, seatId) => {
-        const seat = seats.find(s => s.id === seatId);
-        return total + getSeatPrice(seat.type);
-    }, 0);
-
-    return (
-        <div className="flex flex-col items-center">
-            <img src={manhinhImage} alt="Màn hình" className="w-100 mb-10 mt-20" />
-            <div className="grid grid-cols-10 gap-2">
-                {seats.map(seat => (
-                    <div
-                        key={seat.id}
-                        onClick={() => handleSeatClick(seat.id)}
-                        className={`w-10 h-10 cursor-pointer ${selectedSeats.includes(seat.id) ? 'selected' : ''}`} // Thay đổi kích thước ghế
-                        style={{
-                            backgroundImage: `url(${getChairImage(seat.type)})`, // Sử dụng hình ảnh ghế phù hợp
-                            backgroundSize: 'cover',
-                            filter: getFilterColor(seat.id),
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                        }}
-                    >
-                        <span className="text-white font-semibold text-xs">{seat.id}</span> {/* Thay đổi kích thước chữ */}
-                    </div>
-                ))}
-            </div>
-            <div className="mt-4">
-                  <div className="flex flex-row justify-center items-center"> {/* Sử dụng flex-row để căn chỉnh ngang */}
-                      <div className="flex flex-row justify-center items-center mx-2"> {/* Thêm margin để tạo khoảng cách giữa các ghế */}
-                          <img src={chairImage} alt="Ghế Thường" className="w-10 mb-2" /> {/* Thay đổi kích thước nếu cần */}
-                          <label>Ghế Thường</label>
-                      </div>
-                      <div className="border-l-2 border-gray-400 h-10 mx-2"></div>
-                      <div className="flex flex-row justify-center items-center mx-2">
-                          <img src={chairImageVip} alt="Ghế VIP" className="w-9 mb-2" />
-                          <label>Ghế VIP</label>
-                      </div>
-                      <div className="border-l-2 border-gray-400 h-10 mx-2"></div>
-                      <div className="flex flex-row justify-center items-center mx-2">
-                          <img src={chairImageCouple} alt="Ghế Đôi" className="w-14 mb-2" />
-                          <label>Ghế Đôi</label>
-                      </div>
-                  </div>
-                  <h3 className="text-lg mt-4 mb-10">Tổng tiền: {totalPrice.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}</h3>
-              </div>
-        </div>
+  const handleSeatClick = (seatId) => {
+    setSelectedSeats(prevSelectedSeats =>
+      prevSelectedSeats.includes(seatId)
+        ? prevSelectedSeats.filter(id => id !== seatId) // Bỏ chọn ghế
+        : [...prevSelectedSeats, seatId] // Chọn ghế
     );
+  };
+
+  useEffect(() => {
+    const fetchSeats = async () => {
+      try {
+        const data = await getAllChairs(maphong);
+        setSeats(data);
+      } catch (error) {
+        console.error('Error fetching seats:', error);
+      }
+    };
+
+    if (maphong) {
+      fetchSeats();
+    } else {
+      console.error('Không có mã phòng ()');
+    }
+  }, [maphong]);
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        const data = await getService();
+        setServices(data);
+      } catch (error) {
+        console.error('Error fetching services:', error);
+      }
+    };
+
+    if (showService) {
+      fetchServices();
+    }
+  }, [showService]);
+
+  const getSeatStyle = (type) => {
+    switch (type) {
+      case 'Ghế thường':
+        return 'border-green-500'; // Ghế thường với viền xanh lá
+      case 'Ghế VIP':
+        return 'border-yellow-500'; // Ghế VIP với viền vàng
+      case 'Ghế Đôi':
+        return 'border-pink-500 flex space-x-1'; // Ghế đôi với viền hồng và xếp ngang
+      default:
+        return '';
+    }
+  };
+
+  const totalPrice = selectedSeats.reduce((total, seatId) => {
+    const seat = seats.find(s => s.MAGHE === seatId);
+    return total + (seat ? seat.GIAGHE : 0);
+  }, 0) + services.reduce((total, service) => {
+    const quantity = serviceQuantities[service.MADICHVU] || 0;
+    return total + (service.GIA * quantity);
+  }, 0);
+
+  const formatTime = (timeString) => {
+    const date = new Date(timeString);
+    return date.toISOString().split('T')[1].slice(0, 8); // Lấy giờ và phút
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('vi-VN'); // Định dạng ngày theo định dạng Việt Nam
+  };
+
+  const handleNextClick = () => {
+    setShowService(true);
+  };
+
+  const handleBackClick = () => {
+    setShowService(false);
+  };
+  
+  const handlePaymentClick = () => {
+    // Xử lý thanh toán ở đây
+    console.log('Thanh toán');
+  };
+
+  const handleIncreaseQuantity = (serviceId) => {
+    setServiceQuantities(prevQuantities => ({
+      ...prevQuantities,
+      [serviceId]: (prevQuantities[serviceId] || 0) + 1
+    }));
+  };
+
+  const handleDecreaseQuantity = (serviceId) => {
+    setServiceQuantities(prevQuantities => ({
+      ...prevQuantities,
+      [serviceId]: Math.max((prevQuantities[serviceId] || 0) - 1, 0)
+    }));
+  };
+
+  return (
+    <div className="grid grid-cols-10 gap-4 my-10 mx-4">
+      {/* Phần bên trái (7 cột) */}
+      <div className="col-span-7 p-4 border border-gray-300 rounded-lg flex flex-col items-center justify-center">
+        <hr className="my-10 w-4/5 border-b-8" />
+        <div className="mb-4 w-4/5">
+          <h1 className="text-2xl text-center font-bold mb-4">BOOKING ONLINE</h1>
+          <div className="flex flex-wrap justify-between mb-2">
+            <div className="w-1/2">
+              <strong>Tên Rạp: </strong> {selectedCinema}
+            </div>
+            <div className="w-1/3">
+              <strong>Tên Phòng: </strong> {tenPhong}
+            </div>
+            <div className="w-1/2">
+              <strong>Số Ghế: </strong> {soLuongGhe}
+            </div>
+            <div className="w-1/3">
+              <strong>Giờ Bắt Đầu: </strong> {formatTime(selectedTime)}
+            </div>
+            <div className="w-1/3">
+              <strong>Giờ Kết Thúc: </strong> {formatTime(gioKetThuc)}
+            </div>
+            <div className="w-1/3">
+              <strong>Ngày: </strong> {formatDate(selectedDate)}
+            </div>
+          </div>
+        </div>
+
+        <hr className="my-10 w-4/5 border-b-8" />
+
+        {!showService && (
+          <div className="mb-4 flex justify-center w-4/5">
+            <div className='w-3/4'>
+              <img src={manhinhImage} alt="Màn hình" className="w-full mb-10 mx-auto" />
+              <div className="grid grid-cols-10 gap-2 mb-4">
+                {/* Ghế Thường và VIP */}
+                {seats.filter(seat => seat.TENLOAIGHE !== 'Ghế Đôi').map((seat) => (
+                  <div
+                    key={seat.MAGHE}
+                    onClick={() => handleSeatClick(seat.MAGHE)}
+                    className={`cursor-pointer border-2 ${getSeatStyle(seat.TENLOAIGHE)} ${selectedSeats.includes(seat.MAGHE) ? 'bg-red-500 text-white' : 'bg-white'}`}
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <span className="text-xs font-semibold">{seat.MAGHE.substring(11)}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Ghế Đôi */}
+              <div className="grid grid-cols-5 gap-2">
+                {seats.filter(seat => seat.TENLOAIGHE === 'Ghế Đôi').map((seat) => (
+                  <div
+                    key={seat.MAGHE}
+                    onClick={() => handleSeatClick(seat.MAGHE)}
+                    className={`cursor-pointer border-2 ${getSeatStyle(seat.TENLOAIGHE)} ${selectedSeats.includes(seat.MAGHE) ? 'bg-red-500 text-white' : 'bg-white'}`}
+                    style={{
+                      width: '80px',
+                      height: '40px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <span className="text-xs font-semibold">{seat.MAGHE.substring(11)}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4">
+                <h3 className="text-lg mb-4">Tổng tiền: {totalPrice.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}</h3>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showService && (
+          <div className="mb-4 flex justify-center w-full">
+            <div className='w-full'>
+              <h2 className="text-xl font-bold mb-4">Chọn Dịch Vụ</h2>
+              <div className="grid grid-cols-2 gap-4">
+                {services.map((service) => (
+                  <div key={service.MADICHVU} className="border p-4 rounded-lg flex ">
+                    <img src={service.POSTER} alt={service.TENDICHVU} className="w-1/3 h-auto object-cover rounded-lg mr-4" />
+                    <div className="w-2/3">
+                      <h3 className="text-lg font-semibold">{service.TENDICHVU}</h3>
+                      <p className='text-xs'>{service.MOTA}</p>
+                      <p>Giá: {service.GIA.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}</p>
+                      <div className="flex items-center mt-2">
+                        <button className="bg-gray-300 px-2 py-1 rounded-l" onClick={() => handleDecreaseQuantity(service.MADICHVU)}>-</button>
+                        <span className="px-4">{serviceQuantities[service.MADICHVU] || 0}</span>
+                        <button className="bg-gray-300 px-2 py-1 rounded-r" onClick={() => handleIncreaseQuantity(service.MADICHVU)}>+</button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Phần bên phải (3 cột) */}
+      <div className="col-span-3 p-4 border border-gray-300 rounded-lg">
+        <div className="mb-4">
+          <img src={poster} alt="Hình Phim" className="w-full h-auto object-cover rounded-lg mb-4" />
+        </div>
+        <div className="mb-4">
+          <strong>Tên Phim: </strong> {movieTitle}
+        </div>
+        <div className="mb-4">
+          <strong>Tên Rạp: </strong> {selectedCinema}
+        </div>
+        <div className="mb-4">
+          <strong>Giờ Chiếu: </strong> {formatTime(selectedTime)}
+        </div>
+        <div className="mb-4">
+          <strong>Ngày Chiếu: </strong> {formatDate(selectedDate)}
+        </div>
+        <div className="mb-4">
+          <strong>Ghế: </strong> {selectedSeats.map(seatId => seats.find(seat => seat.MAGHE === seatId)?.MAGHE.substring(11)).join(', ')}
+        </div>
+        <div className="mb-4">
+          <strong>Dịch Vụ: </strong> {Object.entries(serviceQuantities).filter(([serviceId, quantity]) => quantity > 0).map(([serviceId, quantity]) => serviceId).join(', ')}
+        </div>
+        <div className="mb-4">
+          <strong>Tổng Tiền: </strong> {totalPrice.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
+        </div>
+        {!showService ? (
+          <button className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 w-full" onClick={handleNextClick}>
+            Tiếp theo
+          </button>
+        ) : (
+          <>
+            <button className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 w-full" onClick={handlePaymentClick}>
+              Thanh toán
+            </button>
+            <button className="bg-gray-300 mt-3 text-white px-4 py-2 rounded-lg hover:bg-gray-400 w-full" onClick={handleBackClick}>
+                Quay lại
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
 };
 
 export default ChooseChart;

@@ -1,7 +1,7 @@
 import React, {  useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, RecaptchaVerifier, signInWithPhoneNumber } from '../firebase';
-import { register } from '../services/api';
+import { register, checkPhone } from '../services/api';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -17,6 +17,11 @@ const Register = () => {
   const handleRegister = async (event) => {
     event.preventDefault();
     try {
+      const account = await checkPhone(phone);
+      if (account) {
+        setError('Số điện thoại đã được đăng ký. Vui lòng sử dụng số điện thoại khác.');
+        return;
+      }
       sendVerificationCode(phone);
     } catch (error) {
       setError('Error registering: ' + error.message);
@@ -130,7 +135,11 @@ const Register = () => {
                   placeholder="Vui lòng nhập theo định dạng +84xxxxxxxxx"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  onBlur={() => validatePhoneNumber(phone)}
+                  onBlur={() => {
+                    if (validatePhoneNumber(phone)) {
+                      setError('');
+                    }
+                  }}
                   required
                 />
               </div>
