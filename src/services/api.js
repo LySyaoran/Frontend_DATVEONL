@@ -117,7 +117,9 @@ export const register = async (account) => {
 export const checkPhone = async (phone) => {
   try {
     const response = await axios.post(`${API_URL_ACCOUNT}/checkPhone`, { sdt: phone });
-    return response.data;
+    if (response.status === 404) {
+      return null;
+    }
   } catch (error) {
     console.error('Error checking phone:', error);
     throw error;

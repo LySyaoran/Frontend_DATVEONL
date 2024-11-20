@@ -17,12 +17,19 @@ const Register = () => {
   const handleRegister = async (event) => {
     event.preventDefault();
     try {
-      const account = await checkPhone(phone);
-      if (account) {
-        setError('Số điện thoại đã được đăng ký. Vui lòng sử dụng số điện thoại khác.');
-        return;
+      try{
+        const account = await checkPhone(phone);
+        if (account) {
+          setError('Số điện thoại đã được đăng ký. Vui lòng sử dụng số điện thoại khác.');
+          return;
+        }
+        else{
+          sendVerificationCode(phone);
+        }
       }
-      sendVerificationCode(phone);
+      catch{
+        setError('Error checking phone number');
+      }
     } catch (error) {
       setError('Error registering: ' + error.message);
     }
