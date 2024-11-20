@@ -1,11 +1,16 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext'; // Import AuthContext
+import TicketBooked from './TickedBookedTemp';
+import { CheckTicketBooked, getPartTicketInfo, getSeatTicket } from '../services/api';
 
 const Account = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { account, logout } = useContext(AuthContext); // Sử dụng context
   const [activeSection, setActiveSection] = useState('general'); // State để quản lý phần nội dung đang hiển thị
+  const [tickets, setTickets] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!account) {
@@ -13,10 +18,79 @@ const Account = () => {
     }
   }, [account, navigate]);
 
+  useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    const section = queryParams.get('section');
+    if (section) {
+      setActiveSection(section);
+    }
+  }, [location.search]);
+
   const handleLogout = () => {
     logout(); // Gọi hàm logout từ context
     navigate('/login'); // Điều hướng đến trang đăng nhập
   };
+
+  useEffect(() => {
+    const fetchTickets = async () => {
+      try {
+        const result = await CheckTicketBooked(account.MAKH);
+        console.log('CheckTicketBooked:', result);
+        if (result.length === 0) {
+          setTickets([]);
+        } else {
+          const maveArray = result.map(ticket => ticket.MAVE);
+          const ticketDetails = await Promise.all(maveArray.map(async (mave) => {
+            const partTicketInfo = await getPartTicketInfo(account.MAKH, mave);
+            console.log('getPartTicketInfo result for', mave, ':', partTicketInfo);
+            const seatTicket = await getSeatTicket(mave);
+            console.log('getSeatTicket result for', mave, ':', seatTicket); // Log kết quả từ getSeatTicket
+
+            // Chuyển đổi dữ liệu từ partTicketInfo thành các biến riêng lẻ
+            const {
+              NGAYCHIEU: ngaychieu,
+              TENPHONG: tenphong,
+              TENPHIM: tenphim,
+              POSTER: poster,
+              TENKH: tenkh,
+              GIOBATDAU: giobatdau,
+              GIOKETTHUC: gioketthuc,
+              GIAVE: giave,
+              TENRAP: tenrap,
+              TINHTHANH: tinhThanh
+            } = partTicketInfo[0];
+
+            // Hợp nhất các thuộc tính từ partTicketInfo và seatTicket
+            const ticketProps = {
+              ngaychieu,
+              tenphong,
+              tenphim,
+              poster,
+              tenkh,
+              giobatdau,
+              gioketthuc,
+              giave,
+              tenrap,
+              tinhThanh,
+              maghe: seatTicket.map(seat => seat.MAGHE).join(', '), // Hợp nhất các mã ghế thành một chuỗi
+              mave
+            };
+            console.log('ticketProps:', ticketProps); // Log các props sẽ truyền xuống TickedBookedTemp.js
+            return ticketProps;
+          }));
+          setTickets(ticketDetails);
+        }
+      } catch (error) {
+        console.error('Error fetching tickets:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (activeSection === 'tickets') {
+      fetchTickets();
+    }
+  }, [activeSection, account.MAKH]);
 
   if (!account) {
     return <div>Loading...</div>;
@@ -52,7 +126,7 @@ const Account = () => {
           </li>
         </ul>
       </div>
-      <div className="w-3/4 p-4">
+      <div className="w-full py-4">
         {activeSection === 'general' && (
           <div>
             <h1 className="text-2xl font-bold mb-4">Thông tin chung</h1>
@@ -68,6 +142,7 @@ const Account = () => {
             <p><strong>Email:</strong> {account.EMAIL}</p>
             <p><strong>Tên:</strong> {account.TENKH}</p>
             <p><strong>Số điện thoại:</strong> {account.SDT}</p>
+            <p><strong>Mã khách hàng:</strong> {account.MAKH}</p>
           </div>
         )}
         {activeSection === 'history' && (
@@ -79,7 +154,17 @@ const Account = () => {
         {activeSection === 'tickets' && (
           <div>
             <h1 className="text-2xl font-bold mb-4">Vé đã đặt</h1>
-            <p>Hiển thị các vé đã đặt của bạn ở đây.</p>
+            {loading ? (
+              <div>Loading...</div>
+            ) : tickets.length === 0 ? (
+              <div>Hiện chưa có vé nào được đặt</div>
+            ) : (
+              <div>
+                {tickets.map((ticket, index) => (
+                  <TicketBooked key={index} {...ticket} />
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

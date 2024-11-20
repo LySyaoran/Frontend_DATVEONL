@@ -1,18 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import '../assets/styles/chooseChart.css';
 import manhinhImage from '../assets/images/manhinh.png'; // Hình ảnh màn hình
 import { useLocation } from 'react-router-dom';
-import { getAllChairs, getService } from '../services/api'; // Import hàm API
+import { getAllChairs, getService, createTicket, getSeatBooked } from '../services/api'; // Import hàm API
+import { AuthContext } from '../context/AuthContext'; // Import AuthContext
+
 
 const ChooseChart = () => {
   const location = useLocation();
-  const { movieTitle, poster, selectedCinema, maphong, tenPhong, soLuongGhe, selectedTime, gioKetThuc, selectedDate } = location.state || {};
+  const { movieTitle, poster, selectedCinema, maphong, codeschedule, tenPhong, soLuongGhe, selectedTime, gioKetThuc, selectedDate, selectedCity } = location.state || {};
+
+  const { account } = useContext(AuthContext); // Sử dụng context để lấy thông tin tài khoản
 
   const [seats, setSeats] = useState([]);
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [showService, setShowService] = useState(false); // State để quản lý việc hiển thị phần dịch vụ
+  const [showPayMethod, setShowPayMethod] = useState(false); // State để quản lý việc hiển thị modal thanh toán
   const [services, setServices] = useState([]); // State để lưu trữ danh sách dịch vụ
   const [serviceQuantities, setServiceQuantities] = useState({}); // State để lưu trữ số lượng dịch vụ
+  const [bookedSeats, setBookedSeats] = useState([]);
 
   const handleSeatClick = (seatId) => {
     setSelectedSeats(prevSelectedSeats =>
@@ -85,17 +91,68 @@ const ChooseChart = () => {
     return date.toLocaleDateString('vi-VN'); // Định dạng ngày theo định dạng Việt Nam
   };
 
+  useEffect(() => {
+    const fetchBookedSeats = async () => {
+      try {
+        const bookedSeatsData = await getSeatBooked(formatTime(selectedTime), formatTime(gioKetThuc), selectedDate, maphong);
+        setBookedSeats(bookedSeatsData.map(seat => seat.MAGHE));
+      } catch (error) {
+        console.error('Error fetching booked seats:', error);
+      }
+    };
+
+    fetchBookedSeats();
+  }, [formatTime(selectedTime), formatTime(gioKetThuc), selectedDate, maphong]);
+
   const handleNextClick = () => {
-    setShowService(true);
+    if (showService) {
+      setShowPayMethod(true);
+    } else {
+      setShowService(true);
+    }
   };
 
   const handleBackClick = () => {
-    setShowService(false);
+    if (showPayMethod) {
+      setShowPayMethod(false);
+    } else {
+      setShowService(false);
+    }
   };
-  
-  const handlePaymentClick = () => {
-    // Xử lý thanh toán ở đây
-    console.log('Thanh toán');
+
+  const handlePaymentClick = async () => {
+    try {
+      //const today = new Date();
+      const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').id;
+      if (paymentMethod === 'zalopay') {
+        const app_user = account.TENKH; // Lấy tên người dùng từ context
+        const description = `Thanh toán cho phim ${movieTitle} tại rạp ${selectedCinema} với số hóa đơn: `;
+        const masuat = codeschedule;
+        const tinhThanh = selectedCity;
+        const makh = account.MAKH; // Lấy mã khách hàng từ context
+        const amount = totalPrice;
+        const maghe = selectedSeats.join(', ');
+        const giobatdau = formatTime(selectedTime);
+        const gioketthuc = formatTime(gioKetThuc);
+        const ngay = formatDate(selectedDate);
+        const madichvu = Object.entries(serviceQuantities).filter
+        (([serviceId, quantity]) => quantity > 0).map(([serviceId, quantity]) => ({ madv: serviceId, soluong: quantity }));
+        const nameRoom = tenPhong;
+        const nameCinema = selectedCinema;
+        const nameMovie = movieTitle;
+        //const ngaymua = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0') + " " + String(today.getHours()).padStart(2, '0') + ':' + String(today.getMinutes()).padStart(2, '0') + ':' + String(today.getSeconds()).padStart(2, '0') + '.' + String(today.getMilliseconds()).padStart(3, '0');
+        const posterMovie = poster
+
+        const response = await createTicket(app_user, description, masuat, makh, amount, maghe, giobatdau, gioketthuc, ngay, JSON.stringify(madichvu), tinhThanh, nameRoom, nameCinema, nameMovie, posterMovie);
+        console.log('Response:', response);
+        window.location.href = response.order_url;
+      } else {
+        alert('Vui lòng chọn phương thức thanh toán Zalopay.');
+      }
+    } catch (error) {
+      console.error('Error during payment:', error);
+      alert('Error during payment:', error);
+    }
   };
 
   const handleIncreaseQuantity = (serviceId) => {
@@ -143,7 +200,7 @@ const ChooseChart = () => {
 
         <hr className="my-10 w-4/5 border-b-8" />
 
-        {!showService && (
+        {!showService && !showPayMethod && (
           <div className="mb-4 flex justify-center w-4/5">
             <div className='w-3/4'>
               <img src={manhinhImage} alt="Màn hình" className="w-full mb-10 mx-auto" />
@@ -152,8 +209,8 @@ const ChooseChart = () => {
                 {seats.filter(seat => seat.TENLOAIGHE !== 'Ghế Đôi').map((seat) => (
                   <div
                     key={seat.MAGHE}
-                    onClick={() => handleSeatClick(seat.MAGHE)}
-                    className={`cursor-pointer border-2 ${getSeatStyle(seat.TENLOAIGHE)} ${selectedSeats.includes(seat.MAGHE) ? 'bg-red-500 text-white' : 'bg-white'}`}
+                    onClick={() => !bookedSeats.includes(seat.MAGHE) && handleSeatClick(seat.MAGHE)}
+                    className={`cursor-pointer border-2 ${getSeatStyle(seat.TENLOAIGHE)} ${selectedSeats.includes(seat.MAGHE) ? 'bg-red-500 text-white' : bookedSeats.includes(seat.MAGHE) ? 'bg-gray-500 text-white cursor-not-allowed' : 'bg-white'}`}
                     style={{
                       width: '40px',
                       height: '40px',
@@ -172,8 +229,8 @@ const ChooseChart = () => {
                 {seats.filter(seat => seat.TENLOAIGHE === 'Ghế Đôi').map((seat) => (
                   <div
                     key={seat.MAGHE}
-                    onClick={() => handleSeatClick(seat.MAGHE)}
-                    className={`cursor-pointer border-2 ${getSeatStyle(seat.TENLOAIGHE)} ${selectedSeats.includes(seat.MAGHE) ? 'bg-red-500 text-white' : 'bg-white'}`}
+                    onClick={() => !bookedSeats.includes(seat.MAGHE) && handleSeatClick(seat.MAGHE)}
+                    className={`cursor-pointer border-2 ${getSeatStyle(seat.TENLOAIGHE)} ${selectedSeats.includes(seat.MAGHE) ? 'bg-red-500 text-white' : bookedSeats.includes(seat.MAGHE) ? 'bg-gray-500 text-white cursor-not-allowed' : 'bg-white'}`}
                     style={{
                       width: '80px',
                       height: '40px',
@@ -193,7 +250,7 @@ const ChooseChart = () => {
           </div>
         )}
 
-        {showService && (
+        {showService && !showPayMethod && (
           <div className="mb-4 flex justify-center w-full">
             <div className='w-full'>
               <h2 className="text-xl font-bold mb-4">Chọn Dịch Vụ</h2>
@@ -213,6 +270,31 @@ const ChooseChart = () => {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showPayMethod && (
+          <div className="mt-16 flex flex-col items-center justify-center">
+            <h1 className="text-2xl text-center text-red-500 font-bold mb-4">Vui lòng chọn phương thức thanh toán</h1>
+            <div>
+              <h2 className="text-xl font-bold text-gray-800">Phương thức thanh toán</h2>
+              <div className=" gap-4 sm:grid-cols-2 mt-4">
+                <div className="flex items-center mb-4">
+                  <input type="radio" name="paymentMethod" className="w-5 h-5 cursor-pointer" id="vnpay" checked />
+                  <label htmlFor="card" className="ml-4 mr-4 flex gap-2 cursor-pointer">
+                    <img src="https://i.gyazo.com/4914b35ab9381a3b5a1e7e998ee9550c.png" className="w-10" alt="card1" />
+                  </label>
+                  <label className='text-lg font-bold text-gray-800'>Ví điện tử VNPAY</label>
+                </div>
+                <div className="flex items-center mb-4">
+                  <input type="radio" name="paymentMethod" className="w-5 h-5 cursor-pointer" id="zalopay" />
+                  <label htmlFor="paypal" className="ml-4 mr-4 flex gap-2 cursor-pointer">
+                    <img src="https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-ZaloPay.png" className="w-10" alt="paypalCard" />
+                  </label>
+                  <label className='text-lg font-bold text-gray-800'>Ví điện tử Zalopay</label>
+                </div>
               </div>
             </div>
           </div>
@@ -245,17 +327,24 @@ const ChooseChart = () => {
         <div className="mb-4">
           <strong>Tổng Tiền: </strong> {totalPrice.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
         </div>
-        {!showService ? (
-          <button className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 w-full" onClick={handleNextClick}>
-            Tiếp theo
-          </button>
+        {!showPayMethod ? (
+          <>
+            <button className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 w-full" onClick={handleNextClick}>
+              Tiếp theo
+            </button>
+            {(showService || showPayMethod) && (
+              <button className="bg-gray-300 mt-2 text-white px-4 py-2 rounded-lg hover:bg-gray-400 w-full" onClick={handleBackClick}>
+                Quay lại
+              </button>
+            )}
+          </>
         ) : (
           <>
             <button className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 w-full" onClick={handlePaymentClick}>
               Thanh toán
             </button>
-            <button className="bg-gray-300 mt-3 text-white px-4 py-2 rounded-lg hover:bg-gray-400 w-full" onClick={handleBackClick}>
-                Quay lại
+            <button className="bg-gray-300 mt-2 text-white px-4 py-2 rounded-lg hover:bg-gray-400 w-full" onClick={handleBackClick}>
+              Quay lại
             </button>
           </>
         )}

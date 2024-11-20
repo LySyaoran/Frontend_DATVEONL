@@ -11,6 +11,7 @@ import Footer from './components/Footer';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Account from './pages/Account';
+import TicketBooked from './pages/TicketBooked';
 import { AuthProvider } from './context/AuthContext'; // Import AuthProvider
 
 function App() {
@@ -29,6 +30,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/account" element={<Account />} />
+            <Route path="/ticket-booked" element={<TicketBooked />} />
           </Routes>
           <Footer />
         </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getSchedule, getMaPhongChieu, getNameRoom, getCountChair } from '../services/api';
+import { getSchedule, getMaPhongChieu, getNameRoom, getCountChair, getCodeSchedule } from '../services/api';
 
 const BookingModal = ({ isOpen, onClose, movieTitle }) => {
   const navigate = useNavigate();
@@ -79,6 +79,8 @@ const BookingModal = ({ isOpen, onClose, movieTitle }) => {
 
     const maphongResult = await getMaPhongChieu(movieTitle, selectedDate, selectedCity, selectedCinema, selectedTime);
     const maphong = maphongResult[0]?.MAPHONG || 'Không tìm thấy mã phòng';
+    const codescheduleResult = await getCodeSchedule(movieTitle, selectedDate, selectedCity, selectedCinema, selectedTime);
+    const codeschedule = codescheduleResult[0]?.MASUAT || 'Không tìm thấy mã lịch chiếu';
     const tenPhongResult = await getNameRoom(movieTitle, selectedDate, selectedCity, selectedCinema, selectedTime);
     const tenPhong = tenPhongResult[0]?.TENPHONG || 'Không tìm thấy tên phòng';
     try {
@@ -95,6 +97,8 @@ const BookingModal = ({ isOpen, onClose, movieTitle }) => {
         const selectedSuat = selectedRap.suatChieu.find(suat => suat.GIOBATDAU === selectedTime);
         const gioKetThuc = selectedSuat.GIOKETTHUC;
 
+        //tenphim, poster, rap, tenphong, maphong, codeschedule, soluongghe, giodatve, gioKetThuc, ngaychieu, tinhthanh
+
         navigate('/choose-chart', { 
           state: { 
             movieTitle,
@@ -102,10 +106,12 @@ const BookingModal = ({ isOpen, onClose, movieTitle }) => {
             selectedCinema,
             tenPhong,
             maphong,
+            codeschedule,
             soLuongGhe,
             selectedTime,
             gioKetThuc,
-            selectedDate
+            selectedDate,
+            selectedCity
           } 
         });
       } else {

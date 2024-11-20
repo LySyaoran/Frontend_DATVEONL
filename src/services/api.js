@@ -5,6 +5,8 @@ const API_URL_ACCOUNT = 'http://localhost:5000/api/accounts'; // Đường dẫn
 const API_URL_BOOKING = 'http://localhost:5000/api/bookings'; // Đường dẫn đến API movies
 const API_URL_CHAIR = 'http://localhost:5000/api/chairs'; // Đường dẫn đến API movies
 const API_URL_SERVICE = 'http://localhost:5000/api/services'; // Đường dẫn đến API movies
+const API_URL_ZALOPAY = 'http://localhost:5000/api/zalopay'; // Đường dẫn đến API movies
+const API_URL_TICKET = 'http://localhost:5000/api/booked'; // Đường dẫn đến API movies
 
 // Hàm lấy tất cả các phim
 export const getAllMovies = async () => {
@@ -148,6 +150,22 @@ export const getMaPhongChieu = async (movieTitle, ngayChieu, tinhThanh, tenRap, 
   }
 };
 
+export const getCodeSchedule = async (movieTitle, ngayChieu, tinhThanh, tenRap, gioBatDau) => {
+  try {
+    const response = await axios.post(`${API_URL_BOOKING}/codeschedule`, {
+      movieTitle: movieTitle,
+      ngayChieu: ngayChieu,
+      tinhThanh: tinhThanh,
+      tenRap: tenRap,
+      gioBatDau: gioBatDau
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching room:', error);
+    throw error;
+  }
+};
+
 export const getNameRoom = async (movieTitle, ngayChieu, tinhThanh, tenRap, gioBatDau) => {
   try {
     const response = await axios.post(`${API_URL_BOOKING}/nameroom`, {
@@ -163,6 +181,16 @@ export const getNameRoom = async (movieTitle, ngayChieu, tinhThanh, tenRap, gioB
     throw error;
   }
 };
+
+export const getSeatBooked = async (giobatdau, gioketthuc, ngay, maphong) => {
+  try {
+    const response = await axios.post(`${API_URL_BOOKING}/seatbooked`, { giobatdau, gioketthuc, ngay, maphong });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching seat booked:', error);
+    throw error;
+  }
+}
 
 export const getAllChairs = async (maphong) => {
   try {
@@ -193,3 +221,73 @@ export const getService = async () => {
     throw error;
   }
 };
+
+export const createBooking = async (app_user, description, amount) => {
+  try {
+    const response = await axios.post(API_URL_ZALOPAY, {app_user, description, amount});
+    return response.data;
+  } catch (error) {
+    console.error('Error creating booking:', error);
+    throw error;
+  }
+}
+
+export const createTicket = async (app_user, description, masuat, makh, amount, maghe, giobatdau, gioketthuc, ngay, madichvu, tinhThanh, nameRoom, nameCinema, nameMovie, posterMovie, maPhong) => {
+  try {
+    const response = await axios.post(API_URL_ZALOPAY, { app_user, description, masuat, makh, amount, maghe, giobatdau, gioketthuc, ngay, madichvu: JSON.stringify(madichvu), tinhThanh, nameRoom, nameCinema, nameMovie, posterMovie, maPhong });
+    return response.data;
+  } catch (error) {
+    console.error('Error creating ticket:', error);
+    throw error;
+  }
+}
+
+export const getNameCustumer = async (makh) => {
+  try {
+    const response = await axios.post(`${API_URL_TICKET}/name`, { makh });
+    return response.data;
+  } catch (error) {
+    console.error('Error getting name customer:', error);
+    throw error;
+  }
+}
+
+export const getCodeTicket = async (makh, ngaymua) => {
+  try {
+    const response = await axios.post(`${API_URL_TICKET}/codeTicket`, { makh, ngaymua });
+    return response.data;
+  } catch (error) {
+    console.error('Error getting code ticket:', error);
+    throw error;
+  }
+}
+
+export const CheckTicketBooked = async (makh) => {
+  try {
+    const response = await axios.post(`${API_URL_TICKET}/checkTicketBooked`, { makh });
+    return response.data;
+  } catch (error) {
+    console.error('Error checking ticket booked:', error);
+    throw error;
+  }
+}
+
+export const getPartTicketInfo = async (makh, mave) => {
+  try {
+    const response = await axios.post(`${API_URL_TICKET}/partTicketInfo`, { makh, mave });
+    return response.data;
+  } catch (error) {
+    console.error('Error getting part ticket info:', error);
+    throw error;
+  }
+}
+
+export const getSeatTicket = async (mave) => {
+  try {
+    const response = await axios.post(`${API_URL_TICKET}/seatTicket`, { mave });
+    return response.data;
+  } catch (error) {
+    console.error('Error getting seat ticket:', error);
+    throw error;
+  }
+}

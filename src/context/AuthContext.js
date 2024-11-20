@@ -3,22 +3,24 @@ import React, { createContext, useState, useEffect } from 'react';
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [account, setAccount] = useState(null);
+  const [account, setAccount] = useState(() => {
+    const savedAccount = localStorage.getItem('account');
+    return savedAccount ? JSON.parse(savedAccount) : null;
+  });
 
   useEffect(() => {
-    const storedAccount = localStorage.getItem('account');
-    if (storedAccount) {
-      setAccount(JSON.parse(storedAccount));
+    if (account) {
+      localStorage.setItem('account', JSON.stringify(account));
+    } else {
+      localStorage.removeItem('account');
     }
-  }, []);
+  }, [account]);
 
   const login = (accountData) => {
-    localStorage.setItem('account', JSON.stringify(accountData));
     setAccount(accountData);
   };
 
   const logout = () => {
-    localStorage.removeItem('account');
     setAccount(null);
   };
 
