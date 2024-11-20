@@ -18,8 +18,8 @@ const Register = () => {
     event.preventDefault();
     try {
       try{
-        const account = await checkPhone(phone);
-        if (account) {
+        const result = await checkPhone(phone);
+        if (result.exists) {
           setError('Số điện thoại đã được đăng ký. Vui lòng sử dụng số điện thoại khác.');
           return;
         }
@@ -27,8 +27,8 @@ const Register = () => {
           sendVerificationCode(phone);
         }
       }
-      catch{
-        setError('Error checking phone number');
+      catch (error) {
+        setError('Error checking phone number: ' + error.message);
       }
     } catch (error) {
       setError('Error registering: ' + error.message);

@@ -116,15 +116,23 @@ export const register = async (account) => {
 
 export const checkPhone = async (phone) => {
   try {
-    const response = await axios.post(`${API_URL_ACCOUNT}/checkPhone`, { sdt: phone });
-    if (response.status === 404) {
-      return null;
+    const phonenew = phone.replace('+84', '0'); // Chuẩn hóa số điện thoại
+    console.log(`Checking phone: ${phonenew}`);
+    
+    const response = await axios.post(`${API_URL_ACCOUNT}/checkPhone`, { sdt: phonenew });
+
+    // Phân tích phản hồi từ server
+    if (response.data.exists) {
+      return { exists: true }; // Tài khoản đã tồn tại
+    } else {
+      return { exists: false }; // Tài khoản không tồn tại, tiếp tục đăng ký
     }
   } catch (error) {
     console.error('Error checking phone:', error);
-    throw error;
+    throw new Error('Lỗi khi kiểm tra số điện thoại. Vui lòng thử lại sau.');
   }
-}
+};
+
 
 export const getSchedule = async (movieTitle) => {
   try {
