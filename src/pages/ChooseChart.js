@@ -121,6 +121,10 @@ const ChooseChart = () => {
   };
 
   const handlePaymentClick = async () => {
+    if(selectedSeats === null || selectedSeats.length === 0) {
+      alert('Vui lòng chọn ghế trước khi thanh toán.');
+      return;
+    }
     try {
       //const today = new Date();
       const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').id;
