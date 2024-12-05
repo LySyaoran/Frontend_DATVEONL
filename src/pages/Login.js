@@ -18,10 +18,10 @@ const Signin = () => {
         login(account); // Cập nhật context
         navigate('/account'); // Điều hướng đến trang Account sau khi đăng nhập thành công
       } else {
-        setError('Invalid email or password');
+        setError('Tài khoản hoặc mật khẩu không đúng');
       }
     } catch (error) {
-      setError('Error logging in. Please try again.');
+      setError('Tài khoản hoặc mật khẩu không đúng');
     }
   };
 
