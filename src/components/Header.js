@@ -97,7 +97,6 @@ const Header = () => {
               </li>
             </ul>
           </li>
-          <li>Tin mới</li>
           {account ? (
             <li onClick={handleAccountClick}>
               <b>{account.TENKH}</b>
